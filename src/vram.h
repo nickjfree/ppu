@@ -55,5 +55,4 @@ public:
     void set_oam(uint16_t addr, uint8_t value);
 };
 
-
 #endif

@@ -1,0 +1,3 @@
+[submodule "lib/bgfx"]
+	path = lib/bgfx
+	url = https://github.com/bkaradzic/bgfx.git
