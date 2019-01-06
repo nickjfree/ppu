@@ -77,12 +77,15 @@ void renderer::init() {
 
 
     // Create program from shaders.
-    program_scanline = CreateProgram(vs_scanline, sizeof(vs_scanline), ps_scanline, sizeof(ps_scanline));
+    program_scanline_ = CreateProgram(vs_scanline, sizeof(vs_scanline), ps_scanline, sizeof(ps_scanline));
 }
 
 // shutdown
 void renderer::shutdown() {
-
+    
+    bgfx::destroy(vtx_line_);
+    bgfx::destroy(idx_line_);
+    bgfx::destroy(program_scanline_);
     bgfx::shutdown();
 
 }
@@ -148,7 +151,7 @@ bool renderer::frame() {
         );
 
         // Submit primitive for rendering to view 0.
-        bgfx::submit(0, program_scanline);
+        bgfx::submit(0, program_scanline_);
     }
     /* draw sprits */
 

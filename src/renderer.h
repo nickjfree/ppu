@@ -56,9 +56,9 @@ private:
     // programes
     bgfx::VertexBufferHandle  vtx_line_;
     bgfx::IndexBufferHandle  idx_line_;
-    bgfx::ProgramHandle program_scanline;
-    bgfx::ProgramHandle program_pattern;
-    bgfx::ProgramHandle program_nametable;
+    bgfx::ProgramHandle program_scanline_;
+    bgfx::ProgramHandle program_pattern_;
+    bgfx::ProgramHandle program_nametable_;
     // conters
     int64_t frames_;
 
