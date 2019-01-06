@@ -6,20 +6,6 @@ inline bool ppu::is_rendering() {
 }
 
 
-ppu::ppu() {
-    memory = new vram();
-    reset();    
-}
-
-
-ppu::~ppu() {
-    
-    if (memory) {
-        delete memory;
-    }    
-}
-
-
 // reset ppu
 void ppu::reset() {
     // reset all cycles
@@ -63,6 +49,20 @@ void ppu::reset() {
 }
 
 
+// power up
+void ppu::power_up() {
+    reset();
+    tv.init();
+}
+
+
+// shutdown 
+void ppu::shutdown() {
+    tv.shutdown();    
+}
+
+
+
 void ppu::update_registers() {
     // set vblank 
     if (current_scanline == VBLANK_SET_LINE && current_cycle == VBLANK_SET_CYCLE) {
@@ -90,25 +90,25 @@ void ppu::tick() {
     if (current_cycle > (LINE_CYCLES - 1)) {
         // this line is over, submit prev scanline
         // get x/y scroll then submit to renderer
-        // renderer->scanline(number, xscroll, yscroll)
+        tv.scanline(current_scanline, 0, 0);
         current_cycle = current_cycle % LINE_CYCLES;
+        // debug
+        // std::cout << "line: " << current_scanline << endl;
         current_scanline += 1;
     }
-
     // current frame is over
     if (current_scanline > PRE_RENDER_LINE) {
         current_scanline = current_scanline % ALL_LINES;
 
         // tell the renreder to draw one frame
-        // renderer->draw_frame();
-
+        tv.frame();
+        // std::cout << "frame: " << frame << endl;
         frame++;
     }
 
     // update all registers
     update_registers();
 }
-
 
 
 void ppu::write_ppu_ctrl(uint8_t value) {
@@ -124,7 +124,7 @@ void ppu::write_oam_addr(uint8_t value) {
 }
 
 void ppu::write_oam_data(uint8_t value) {
-    memory->set_oam(oam_addr, value);
+    memory.set_oam(oam_addr, value);
     // increment oam_addr after write 
     oam_addr++;        
 }
@@ -157,7 +157,7 @@ void ppu::write_ppu_addr(uint8_t value) {
 }
 
 void ppu::write_ppu_data(uint8_t value) {
-    memory->set_vram(v, value);
+    memory.set_vram(v, value);
     if (ppu_ctl & 0x4) {
         v += 1;
     } else {
@@ -176,15 +176,19 @@ uint8_t ppu::read_ppu_status() {
 }
 
 uint8_t ppu::read_oam_data() {
-    return memory->get_oam(oam_addr);
+    return memory.get_oam(oam_addr);
 }
 
 uint8_t ppu::read_ppu_data() {
-    return memory->get_vram(v);
+    return memory.get_vram(v);
 }
 
 void ppu::update(int cycles) {
     while(cycles--) {
         tick();
     }
+}
+
+bool ppu::handle_window() {
+    return tv.update();
 }

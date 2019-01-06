@@ -5,6 +5,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/lib/bgfx/include)
 include_directories(${CMAKE_SOURCE_DIR}/lib/bgfx/examples)
 include_directories(${CMAKE_SOURCE_DIR}/lib/bx/include)
+include_directories(${CMAKE_SOURCE_DIR}/lib/bimg/include)
 
 link_directories(${CMAKE_SOURCE_DIR}/lib/bgfx/.build/linux64_gcc/bin)
 
@@ -23,4 +24,3 @@ endif()
 if(CMAKE_THREAD_LIBS_INIT)
   target_link_libraries(ppu "${CMAKE_THREAD_LIBS_INIT}")
 endif()
-

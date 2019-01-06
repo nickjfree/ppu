@@ -5,11 +5,19 @@
 
 using namespace std;
 
+
 int _main_(int argc, char *argv[]) {
-    renderer * test_renderer = new renderer();
-    test_renderer->init();
-    while(test_renderer->update());
-    test_renderer->shutdown();
+
+    ppu nes_ppu = ppu();
+    nes_ppu.power_up();
+
+    do {
+        // do some simulations each loop
+        nes_ppu.update(100);
+    } while(nes_ppu.handle_window());
+
+    // shutdown 
+    nes_ppu.shutdown();
     return 0;
 }
 

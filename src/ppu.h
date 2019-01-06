@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include "vram.h"
 #include "renderer.h"
-
+#include <iostream>
  
+using namespace std;
 
 /**
     registers
@@ -53,7 +54,10 @@ class ppu
 private:
     /* video memery */
 
-    vram * memory;
+    vram memory;
+
+    /* scanline renderer */ 
+    renderer tv;
 
     /* mapped registers */
 
@@ -96,16 +100,18 @@ private:
     void update_registers();
 
 public:
-    ppu();
-
-    ~ppu();
     // reset ppu
     void reset();
+    // power up
+    void power_up();
+    // shutdown 
+    void shutdown();
     // update one cycle
     void tick();
     // update 
     void update(int cycles);
-    
+    // handle window message and update
+    bool handle_window();
     /* interfaces for the cpu */
 
     void write_ppu_ctrl(uint8_t value);
