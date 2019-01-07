@@ -75,6 +75,21 @@ void ppu::update_registers() {
 
 }
 
+// 
+bool ppu::scanline_diry() {
+    return false;
+}
+    
+// flush pattern content if bank switched. 
+void ppu::flush_pattern_table() {
+
+}
+    
+// flush name table content if bank switched.
+void ppu::flush_name_table() {
+
+}
+
 
 // update one cycle. must be called after all memory accessing
 void ppu::tick() {
@@ -89,8 +104,10 @@ void ppu::tick() {
 
     if (current_cycle > (LINE_CYCLES - 1)) {
         // this line is over, submit prev scanline
-        // get x/y scroll then submit to renderer
+        // if status changed, name table, pattern table bank or palette changed
+        // tv.fill_vram();
         tv.scanline(current_scanline, 0, 0);
+        // get x/y scroll then submit to renderer
         current_cycle = current_cycle % LINE_CYCLES;
         // debug
         // std::cout << "line: " << current_scanline << endl;
@@ -99,7 +116,8 @@ void ppu::tick() {
     // current frame is over
     if (current_scanline > PRE_RENDER_LINE) {
         current_scanline = current_scanline % ALL_LINES;
-
+        // flush all scanlines
+        tv.flush();
         // tell the renreder to draw one frame
         tv.frame();
         // std::cout << "frame: " << frame << endl;

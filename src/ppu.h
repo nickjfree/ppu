@@ -48,6 +48,12 @@ using namespace std;
 
 
 
+struct ppu_pso
+{
+
+};
+
+
 
 class ppu 
 {
@@ -98,6 +104,12 @@ private:
     inline bool is_rendering();
     // update all the registers
     void update_registers();
+    // flush state. some game do tricks to change pattern table, name_table, palette, scroll in mid-scanline
+    bool scanline_diry();
+    // flush pattern content if bank switched. 
+    void flush_pattern_table();
+    // flush name table content if bank switched.
+    void flush_name_table();
 
 public:
     // reset ppu

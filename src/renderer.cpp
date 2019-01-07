@@ -70,7 +70,7 @@ void renderer::init() {
                     , quad_vertex::vtx_decl
                     );
 
-        // Create static index buffer.
+    // Create static index buffer.
     idx_line_ = bgfx::createIndexBuffer(
                 bgfx::makeRef(s_quadIndices, sizeof(s_quadIndices) )
                 );
@@ -107,57 +107,78 @@ bool renderer::update() {
 }
 
 
-int renderer::scanline(int line_number, float xscroll, float yscroll) {
+int renderer::scanline(float line_number, float xscroll, float yscroll) {
     // fill scanline cpu buffer
+
+
     if (line_number < 0 || line_number > 239) {
-        // do not render vblank lines and pre-render line
         return -1;
     }
-    scanline_instance * instance = scanlines_ + line_number;
-    instance->line_number = line_number;
-    instance->xscroll = xscroll;
-    instance->yscroll = yscroll;
-    instance->pading2 = 0;
+    if (scanlines_.empty()) {
+        scanline_instance instance{
+            xscroll,
+            yscroll,
+            line_number,
+            line_number
+        };
+        scanlines_.push_back(instance);
+    } else {
+        scanline_instance& prev = scanlines_.back();  
+        if (xscroll == prev.xscroll && yscroll == prev.yscroll) {
+            // status is not changed
+            prev.line_end = line_number;
+        } else {
+            scanline_instance instance{
+                xscroll,
+                yscroll,
+                line_number,
+                line_number
+            };
+            scanlines_.push_back(instance);
+        }
+    }
     return 0;
 }
 
 
-// draw current frame
+int renderer::flush() {
+    int buffered_lines = scanlines_.size();
+    if (buffered_lines) {
+        // submit all the lines
+        // scanline instancing buffer
+        bgfx::InstanceDataBuffer idb;
+        bgfx::allocInstanceDataBuffer(&idb, buffered_lines, sizeof(scanline_instance));        
+        memcpy(idb.data, scanlines_.data(), sizeof(scanline_instance) * buffered_lines);   
+        /* draw some part of the background */
+        {
+            // set vertext buffer
+            bgfx::setVertexBuffer(0, vtx_line_);
+            bgfx::setIndexBuffer(idx_line_);
+            // Set instance data buffer.
+            bgfx::setInstanceDataBuffer(&idb);
+
+            // Set render states.
+            bgfx::setState(0
+                | BGFX_STATE_WRITE_RGB
+                | BGFX_STATE_WRITE_A
+                | BGFX_STATE_DEPTH_TEST_ALWAYS
+            );
+            // Submit primitive for rendering to view 0.
+            bgfx::submit(0, program_scanline_);
+        }
+        // reset buffer
+        scanlines_.clear();
+        // add counter
+        line_drawed_ += buffered_lines;
+    }
+    return 0;
+}
+
+
+// draw infos about current frame
 bool renderer::frame() {
 
-    // init frame data
-    begin();
-    // copy instancing data to bgfx.     
-    memcpy(idb_.data, scanlines_, sizeof(scanline_instance) * 240);
-    // draw with instancing
-    /* draw pattern tables */
-
-    /* draw nametables (with palette) */
-
-
-    /* draw the final background */
-    {
-        // set vertext buffer
-        bgfx::setVertexBuffer(0, vtx_line_);
-        bgfx::setIndexBuffer(idx_line_);
-        // Set instance data buffer.
-        bgfx::setInstanceDataBuffer(&idb_);
-
-        // Set render states.
-        bgfx::setState(0
-            | BGFX_STATE_WRITE_RGB
-            | BGFX_STATE_WRITE_A
-            | BGFX_STATE_DEPTH_TEST_ALWAYS
-        );
-
-        // Submit primitive for rendering to view 0.
-        bgfx::submit(0, program_scanline_);
-    }
-    /* draw sprits */
-
-
     /* show debug infos */
-
     frames_++;
     bgfx::dbgTextClear();
     int64_t now = bx::getHPCounter();
@@ -168,13 +189,10 @@ bool renderer::frame() {
     const double toMs = 1000.0 / freq;
 
     bgfx::dbgTextPrintf(90, 0, 0x4F, "fps = %7.3fms", toMs);
-    bgfx::dbgTextPrintf(90, 1, 0x4F, "width = %d, height = %d", width_, height_);
-    bgfx::dbgTextPrintf(90, 2, 0x4F, "frame: %ul", frames_);
+    bgfx::dbgTextPrintf(90, 2, 0x4F, "frame: %d", frames_);
+    bgfx::dbgTextPrintf(90, 1, 0x4F, "lines: %d", line_drawed_);
 
+    // clear counter
+    line_drawed_ = 0;
     return true;
-}
-
-
-void renderer::begin() {
-    bgfx::allocInstanceDataBuffer(&idb_, 240, sizeof(scanline_instance));
 }

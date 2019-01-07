@@ -13,7 +13,7 @@ int _main_(int argc, char *argv[]) {
 
     do {
         // do some simulations each loop
-        nes_ppu.update(100);
+        nes_ppu.update(10000);
     } while(nes_ppu.handle_window());
 
     // shutdown 
