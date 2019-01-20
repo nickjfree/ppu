@@ -41,9 +41,10 @@ bgfx::ProgramHandle renderer::CreateProgram(const uint8_t * vs_code, uint32_t vs
 
 
 // init
-void renderer::init() {
+void renderer::init(const vram * memory) {
 
-    
+    memory_ = memory; 
+
     bgfx::Init init;
     init.type     = bgfx::RendererType::OpenGL;
     init.vendorId = BGFX_PCI_ID_NONE;
@@ -75,7 +76,23 @@ void renderer::init() {
                 bgfx::makeRef(s_quadIndices, sizeof(s_quadIndices) )
                 );
 
+    // create palette texture
+    tex_palette_ = bgfx::createTexture2D(64, 1, false, 1,
+        bgfx::TextureFormat::RGBA8, BGFX_TEXTURE_NONE|BGFX_SAMPLER_POINT, nullptr);
 
+    // create fame texture
+    tex_frame_ = bgfx::createTexture2D(256, 240, false, 1, 
+        bgfx::TextureFormat::R8U, BGFX_TEXTURE_NONE|BGFX_SAMPLER_POINT, nullptr);
+
+    // update data to palette texture
+    bgfx::updateTexture2D(tex_palette_, 0, 0, 0, 0, 64, 1, bgfx::makeRef(palette_data, 256));
+
+    // create uniforms
+    s_color_ = bgfx::createUniform("s_color", bgfx::UniformType::Int1, 1);
+    // create uniforms for 
+    s_palette_ = bgfx::createUniform("s_palette", bgfx::UniformType::Int1, 1);
+    // create palette, 2 float4 type
+    u_palette_ = bgfx::createUniform("u_palette", bgfx::UniformType::Vec4, 2);
     // Create program from shaders.
     program_scanline_ = CreateProgram(vs_scanline, sizeof(vs_scanline), ps_scanline, sizeof(ps_scanline));
 }
@@ -109,8 +126,6 @@ bool renderer::update() {
 
 int renderer::scanline(float line_number, float xscroll, float yscroll) {
     // fill scanline cpu buffer
-
-
     if (line_number < 0 || line_number > 239) {
         return -1;
     }
@@ -140,40 +155,29 @@ int renderer::scanline(float line_number, float xscroll, float yscroll) {
     return 0;
 }
 
+int renderer::submit(void * data, size_t size) {
+    // update color buffer
+    bgfx::updateTexture2D(tex_frame_, 0, 0, 0, 0, 256, 240, bgfx::makeRef(data, size));
 
-int renderer::flush() {
-    int buffered_lines = scanlines_.size();
-    if (buffered_lines) {
-        // submit all the lines
-        // scanline instancing buffer
-        bgfx::InstanceDataBuffer idb;
-        bgfx::allocInstanceDataBuffer(&idb, buffered_lines, sizeof(scanline_instance));        
-        memcpy(idb.data, scanlines_.data(), sizeof(scanline_instance) * buffered_lines);   
-        /* draw some part of the background */
-        {
-            // set vertext buffer
-            bgfx::setVertexBuffer(0, vtx_line_);
-            bgfx::setIndexBuffer(idx_line_);
-            // Set instance data buffer.
-            bgfx::setInstanceDataBuffer(&idb);
+    bgfx::setUniform(u_palette_, memory_->palette());
+    // set vertext buffer
+    bgfx::setVertexBuffer(0, vtx_line_);
+    bgfx::setIndexBuffer(idx_line_);
 
-            // Set render states.
-            bgfx::setState(0
-                | BGFX_STATE_WRITE_RGB
-                | BGFX_STATE_WRITE_A
-                | BGFX_STATE_DEPTH_TEST_ALWAYS
-            );
-            // Submit primitive for rendering to view 0.
-            bgfx::submit(0, program_scanline_);
-        }
-        // reset buffer
-        scanlines_.clear();
-        // add counter
-        line_drawed_ += buffered_lines;
-    }
+    // Set render states.
+    bgfx::setState(0
+        | BGFX_STATE_WRITE_RGB
+        | BGFX_STATE_WRITE_A
+        | BGFX_STATE_DEPTH_TEST_ALWAYS
+    );
+    // set color texture
+    bgfx::setTexture(0, s_color_, tex_frame_);
+    // set palette texture
+    bgfx::setTexture(1, s_palette_, tex_palette_);
+    // Submit primitive for rendering to view 0.
+    bgfx::submit(0, program_scanline_);
     return 0;
 }
-
 
 // draw infos about current frame
 bool renderer::frame() {

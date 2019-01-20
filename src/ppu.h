@@ -7,6 +7,8 @@
 #include "vram.h"
 #include "renderer.h"
 #include <iostream>
+#include <bitset>
+#include <vector>
  
 using namespace std;
 
@@ -90,6 +92,14 @@ private:
     uint8_t w;
     // Fine X scroll (3 bits)
     uint8_t x;
+    // prefetched shift register for background data, (NT0, AT0, sprite0_l, sprite0_r, NT1, AT1, sprite1_f, sprite1_r) 
+    uint64_t fetched_color;
+    // current background color id;
+    uint8_t background_color;
+    // current sprite color id;
+    uint8_t sprite_color;
+    // final frame buffer
+    std::vector<uint8_t> frame_buffer_;
 
     /* cycles */
     // current frame
@@ -100,17 +110,32 @@ private:
     int current_scanline;
 
 private:
-    // is the ppu in rendering scanlines
-    inline bool is_rendering();
     // update all the registers
     void update_registers();
-    // flush state. some game do tricks to change pattern table, name_table, palette, scroll in mid-scanline
-    bool scanline_diry();
-    // flush pattern content if bank switched. 
-    void flush_pattern_table();
-    // flush name table content if bank switched.
-    void flush_name_table();
-
+    // increment hori(v)
+    void inch();
+    // increment vert(v)
+    void incv();
+    // hori(v) = hori(t)
+    void copyht();
+    // vert(v) = vert(t)
+    void copyvt();
+    // fetch nt
+    uint8_t fetchnt();
+    // fetch at
+    uint8_t fetchat();
+    // fetch sprite l
+    uint8_t fetchspl(uint8_t index);
+    // fetch sprite r
+    uint8_t fetchspr(uint8_t index);
+    // fetch  tile
+    void fetch();
+    // render current background color_id.
+    uint8_t render_background_px();
+    // render current sprite color_id.
+    uint8_t render_sprite_px();
+    // mixe backgroun and sprite color. and send to renderer
+    void mix();
 public:
     // reset ppu
     void reset();

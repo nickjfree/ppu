@@ -15,12 +15,11 @@
 **/
 
 #include <stdint.h>
-#include "renderer.h"
 
 
 #define PATTERN_TABLE_SIZE  (0x1000)
 #define NAME_TABLE_SIZE     (0x0400)
-#define PALETTE_SZIE        (0x0020)
+#define PALETTE_SIZE        (0x0020)
 #define OAM_SIZE            (0x0100)   
 
 /**
@@ -34,7 +33,7 @@ private:
     // name tables
     uint8_t name_tables[4][NAME_TABLE_SIZE];
     // palette 
-    uint8_t palettes[PALETTE_SZIE];
+    uint8_t palettes[PALETTE_SIZE];
     // internal oam memery
     uint8_t oam[OAM_SIZE];
 
@@ -43,8 +42,6 @@ private:
     uint8_t * real_addr(uint16_t addr);
 
 public:
-    vram();
-    ~vram();
     // get value from vram
     uint8_t get_vram(uint16_t addr);
     // get oam data
@@ -53,6 +50,12 @@ public:
     void set_vram(uint16_t addr, uint8_t value);
     // set value to oam
     void set_oam(uint16_t addr, uint8_t value);
+    // get addr
+    const uint8_t * patterntable() const { return (const uint8_t *)pattern_tables; }
+
+    const uint8_t * nametable() const { return (const uint8_t *)name_tables; }
+
+    const uint8_t * palette() const { return (const uint8_t *)palettes; }
 };
 
 #endif
