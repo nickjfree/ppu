@@ -51,11 +51,13 @@ public:
     // set value to oam
     void set_oam(uint16_t addr, uint8_t value);
     // get addr
-    const uint8_t * patterntable() const { return (const uint8_t *)pattern_tables; }
+    const uint8_t * patterntable_data() const { return (const uint8_t *)pattern_tables; }
 
-    const uint8_t * nametable() const { return (const uint8_t *)name_tables; }
+    const uint8_t * nametable_data() const { return (const uint8_t *)name_tables; }
 
-    const uint8_t * palette() const { return (const uint8_t *)palettes; }
+    const uint8_t * palette_data() const { return (const uint8_t *)palettes; }
+
+    const uint8_t * oam_data() const { return (const uint8_t *)oam; }
 };
 
 #endif

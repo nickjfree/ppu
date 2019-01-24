@@ -126,6 +126,66 @@ void ppu::fetch() {
     //cout << "fecther: " << bitset<64>(fetched_color) << "pt: " << current_cycle << " " << current_scanline << endl;}
 }
 
+
+// fetch all sprite for next scanline
+void ppu::fetchsprites() {
+    
+    const uint8_t * oam = memory.oam_data();
+    int count = 0;
+    for (int i = 0; i < 64; i++) {
+        uint8_t y_pos = oam[i*4];
+        // scpite will delay one scanline
+        uint8_t distance = current_scanline - y_pos; 
+        if (distance >=0 && distance <=7) {
+            if (count == 8) {
+                // set sprite overflow flag
+                ppu_status |= 0x40;
+                continue;
+            }
+            // in range
+            uint8_t index = oam[i*4+1];
+            uint8_t attr = oam[i*4+2];
+            uint8_t x_pos = oam[i*4+3]; 
+            // fetch sprite data
+            uint16_t finey = (v >> 12) & 0x0007;
+            // flip v
+            if (attr & 0x80) {
+                finey = 7 - finey;
+            }
+            int16_t addr =  ((ppu_ctl & 0x0004) << 9) + index * 16 + finey;
+            uint8_t sp_l = memory.get_vram(addr);
+            addr += 8;
+            uint8_t sp_r = memory.get_vram(addr);
+            // get the color_id bit stream
+            uint16_t color_data = 0;
+            for (int n = 0; n < 8; n++) {
+                color_data <= 2;
+                int shift = 7 - n;
+                // flip h
+                if(attr & 0x04) {
+                    shift = 7 - shift;
+                }
+                uint8_t color_id = ((sp_r >> shift) & 0x01) << 1 | ((sp_l >> shift) & 0x01);
+                color_data <<= 2;
+                color_data |= (color_id & 0x03);
+            }
+            // store it to register
+            fetched_sprite[count++] = (x_pos << 24) | (attr << 16) | color_data;
+        }
+    }
+    cout << "ppu_status " << bitset<8>(ppu_status) << endl;
+
+}
+
+
+void ppu::clearsprite() {
+    for (int i = 0; i < 8; i++) {
+        // init all sprite to transparent colot
+        fetched_sprite[i] = 0;
+    }
+}
+
+
 // render current background color_id.
 uint8_t ppu::render_background_px() {
     uint8_t finex = x;
@@ -203,6 +263,8 @@ void ppu::update_registers() {
             // hori(v) = hori(t)
             if (current_cycle == 257) {
                 copyht();
+                clearsprite();
+                fetchsprites();
             }
         }
         // are we in pre-renderline and setup stage
@@ -252,14 +314,6 @@ void ppu::tick() {
     // current frame is over
     if (current_scanline > PRE_RENDER_LINE) {
         current_scanline = current_scanline % ALL_LINES;
-        if (frame_buffer_.size()) {
-            for (int i = 0; i < 240; i++) {
-                for (int j = 0; j < 256; j++) {
-                   cout << int(frame_buffer_[i*256+j]&3);
-                }
-                cout << endl;
-            } 
-        }
         // flush all scanlines
         tv.submit(frame_buffer_.data(), 61440);
         // tell the renreder to draw one frame

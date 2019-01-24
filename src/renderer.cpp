@@ -159,7 +159,7 @@ int renderer::submit(void * data, size_t size) {
     // update color buffer
     bgfx::updateTexture2D(tex_frame_, 0, 0, 0, 0, 256, 240, bgfx::makeRef(data, size));
 
-    bgfx::setUniform(u_palette_, memory_->palette());
+    bgfx::setUniform(u_palette_, memory_->palette_data());
     // set vertext buffer
     bgfx::setVertexBuffer(0, vtx_line_);
     bgfx::setIndexBuffer(idx_line_);
@@ -192,7 +192,7 @@ bool renderer::frame() {
     const double freq = double(bx::getHPFrequency() );
     const double toMs = 1000.0 / freq;
 
-    bgfx::dbgTextPrintf(90, 0, 0x4F, "fps = %7.3fms", toMs);
+    bgfx::dbgTextPrintf(90, 0, 0x4F, "fps = %7.3fms", frameTime * toMs);
     bgfx::dbgTextPrintf(90, 2, 0x4F, "frame: %d", frames_);
     bgfx::dbgTextPrintf(90, 1, 0x4F, "lines: %d", line_drawed_);
 

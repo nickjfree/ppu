@@ -50,12 +50,6 @@ using namespace std;
 
 
 
-struct ppu_pso
-{
-
-};
-
-
 
 class ppu 
 {
@@ -94,6 +88,8 @@ private:
     uint8_t x;
     // prefetched shift register for background data, (NT0, AT0, sprite0_l, sprite0_r, NT1, AT1, sprite1_f, sprite1_r) 
     uint64_t fetched_color;
+    // 8 sprite register
+    uint32_t fetched_sprite[8];
     // current background color id;
     uint8_t background_color;
     // current sprite color id;
@@ -136,6 +132,11 @@ private:
     uint8_t render_sprite_px();
     // mixe backgroun and sprite color. and send to renderer
     void mix();
+    // find sprite to render for next scanline
+    void fetchsprites();
+    // clear sprite register
+    void clearsprite();
+
 public:
     // reset ppu
     void reset();
